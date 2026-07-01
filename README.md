@@ -1,0 +1,175 @@
+# TxGuard
+
+TxGuard is a local-first EVM transaction firewall browser extension. It helps users understand risky wallet requests before signing.
+
+TxGuard is not a wallet. It does not store private keys, does not sign transactions, and does not modify transactions. It analyzes wallet requests locally and lets users decide whether to continue or cancel.
+
+## Tagline
+
+Local-first EVM transaction firewall.
+
+## Short Description
+
+TxGuard helps users understand risky EVM wallet requests before signing. Users can add any EVM-compatible chain with their own RPC provider and receive local transaction warnings for token approvals, NFT approvals, signatures, and unknown contract calls.
+
+## MVP Goals
+
+The MVP focuses on EVM-only transaction safety.
+
+Required MVP features:
+
+1. Detect EVM wallet provider through `window.ethereum`.
+2. Intercept selected provider requests:
+   - `eth_sendTransaction`
+   - `eth_signTypedData`
+   - `eth_signTypedData_v3`
+   - `eth_signTypedData_v4`
+   - `personal_sign`
+   - `wallet_switchEthereumChain`
+3. Detect the current wallet chain ID.
+4. Let users add custom EVM chains and custom RPC URLs.
+5. Validate RPC by checking `eth_chainId` and `eth_blockNumber`.
+6. Decode common transaction calldata:
+   - ERC20 `approve(address,uint256)`
+   - ERC20 `increaseAllowance(address,uint256)`
+   - ERC20 `decreaseAllowance(address,uint256)`
+   - ERC20 `transfer(address,uint256)`
+   - ERC20 `transferFrom(address,address,uint256)`
+   - ERC721/ERC1155 `setApprovalForAll(address,bool)`
+7. Detect unlimited approval.
+8. Read token metadata through the configured RPC.
+9. Show a warning overlay before forwarding the original wallet request.
+10. Let the user continue or cancel.
+11. Store local transaction check history.
+12. Provide popup, settings, and optional history pages.
+
+## What TxGuard Is Not
+
+TxGuard must not:
+
+- Create wallets.
+- Import private keys.
+- Ask for seed phrases.
+- Store private keys.
+- Sign transactions.
+- Modify transaction parameters.
+- Route swaps.
+- Route bridges.
+- Send transaction data to a backend by default.
+
+## Tech Stack
+
+Recommended stack:
+
+```text
+TypeScript
+React
+Vite
+Chrome Manifest V3
+@crxjs/vite-plugin
+viem
+zod
+Vitest
+ESLint
+Prettier
+```
+
+## Development Commands
+
+Suggested setup:
+
+```bash
+npm create vite@latest txguard -- --template react-ts
+cd txguard
+npm install viem zod @crxjs/vite-plugin
+npm install -D vitest eslint prettier typescript
+```
+
+Suggested scripts:
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  }
+}
+```
+
+## How to Load in Chrome
+
+1. Run `npm run build`.
+2. Open Chrome.
+3. Go to `chrome://extensions`.
+4. Enable Developer Mode.
+5. Click Load unpacked.
+6. Select the generated extension build folder.
+
+## Privacy Notice
+
+TxGuard uses the user-configured RPC endpoint for read-only blockchain queries.
+
+Only use RPC endpoints you trust. A malicious RPC may log queried addresses or return incorrect blockchain data.
+
+TxGuard does not store private keys and does not sign transactions. By default, TxGuard does not send unsigned transactions to any backend server.
+
+## Known Limitations
+
+1. Provider hook race condition: some dApps may capture `window.ethereum` before TxGuard wraps it.
+2. Wallet-specific behavior: wallets may implement EIP-1193 providers differently.
+3. RPC trust: a custom RPC can return incorrect data.
+4. No full transaction simulation in MVP.
+5. No global scam database in MVP.
+6. No backend in MVP.
+7. Typed data detection is best-effort only.
+
+## Roadmap
+
+### v0.1
+
+- EVM-only custom RPC support.
+- Provider request interception.
+- ERC20 approval detection.
+- Unlimited approval warnings.
+- NFT approval-for-all warnings.
+- Signature warnings.
+- Local history.
+
+### v0.2
+
+- Approval dashboard.
+- Revoke helper.
+- Permit and Permit2 support.
+- Better typed data parsing.
+- Contract code and bytecode checks.
+
+### v0.3
+
+- Domain reputation database.
+- Known dApp allowlist.
+- Known scam blocklist.
+- Import/export settings.
+
+### v0.4
+
+- Transaction simulation.
+- Balance delta preview.
+- Token price display.
+- Slippage warning.
+
+### v0.5
+
+- Team mode.
+- Shared policy rules.
+- Slack/Telegram alerts.
+- B2B dashboard.
+
+### Later
+
+- TRON support.
+- Bridge risk.
+- Cross-chain fee comparison.
+- Solana support.
