@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><title>TxGuard E2E Test dApp</title>
+<style>body{font-family:system-ui,sans-serif;padding:24px;max-width:720px;margin:0 auto}h1{color:#0066cc}button{padding:10px 16px;margin:4px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff}.log{background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:300px;overflow-y:auto}.status{padding:8px 12px;border-radius:6px;margin:8px 0;font-weight:600}.ok{background:#e8f5e9;color:#2e7d32}.info{background:#e3f2fd;color:#1565c0}</style></head>
+<body><h1>TxGuard E2E Test dApp</h1><div id="status" class="status info">Setting up...</div>
+<h2>Test Actions</h2>
+<button id="btn-approve-unlimited">Approve Unlimited (ERC20)</button>
+<button id="btn-personal-sign">Personal Sign</button>
+<button id="btn-chain-id">eth_chainId (passthrough)</button>
+<h2>Decision Bridge</h2>
+<button id="btn-continue">Respond CONTINUE</button>
+<button id="btn-cancel">Respond CANCEL</button>
+<label>Auto: <select id="auto-decision"><option value="manual">Manual</option><option value="continue">Auto Continue</option><option value="cancel">Auto Cancel</option></select></label>
+<h2>Log</h2><div id="log" class="log"></div>
+<script>
+const fp={request:async a=>{if(a.method==='eth_chainId')return'0x1';if(a.method==='eth_sendTransaction')return'0x'+'ab'.repeat(32);if(a.method==='personal_sign')return'0x'+'cd'.repeat(32);return'0x'},on:(e,h)=>{if(e==='chainChanged')window.__tcc=h}};window.ethereum=fp;let li=null;
+window.addEventListener('message',ev=>{if(ev.origin!==location.origin)return;const d=ev.data;if(!d||d.source!=='TXGUARD_INJECTED')return;if(d.type==='PROVIDER_REQUEST_INTERCEPTED'){li=d;log('INTERCEPTED: '+d.method+' (id='+d.requestId.slice(0,12)+', chainId='+d.chainId+')');const a=document.getElementById('auto-decision').value;if(a==='continue')r('CONTINUE');else if(a==='cancel')r('CANCEL')}else if(d.type==='WALLET_CHAIN_CHANGED')log('CHAIN_CHANGED: '+d.chainId)});
+function r(dec){if(!li)return;window.postMessage({source:'TXGUARD_CONTENT',type:'USER_DECISION',requestId:li.requestId,decision:dec},location.origin);log('DECISION: '+dec)}
+const s=document.createElement('script');s.src='injected/providerHook.js';s.onload=()=>{document.getElementById('status').textContent='Hook loaded. hooked='+(!!window.ethereum.__TXGUARD_HOOKED__);document.getElementById('status').className='status ok';log('providerHook.js loaded')};document.head.appendChild(s);
+function log(m){const e=document.getElementById('log');e.textContent='['+new Date().toLocaleTimeString()+'] '+m+'\n'+e.textContent}
+function encA(sp,amt){return'0x095ea7b3'+sp.slice(2).padStart(64,'0')+amt.slice(2).padStart(64,'0')}
+const SP='0x'+'11'.repeat(20),TK='0x'+'aa'.repeat(20),SD='0x'+'bb'.repeat(20),MAX='0x'+'f'.repeat(64);
+document.getElementById('btn-approve-unlimited').onclick=async()=>{log('>>> approve unlimited...');try{const r=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:SD,to:TK,data:encA(SP,MAX)}]});log('RESULT: '+r+' (forwarded)')}catch(e){log('REJECTED: '+e.message+' (code='+(e.code||'n/a')+')')}};
+document.getElementById('btn-personal-sign').onclick=async()=>{log('>>> personal_sign...');try{const r=await window.ethereum.request({method:'personal_sign',params:['0x48656c6c6f',SD]});log('RESULT: '+r)}catch(e){log('REJECTED: '+e.message+' (code='+(e.code||'n/a')+')')}};
+document.getElementById('btn-chain-id').onclick=async()=>{log('>>> eth_chainId (passthrough)...');try{const r=await window.ethereum.request({method:'eth_chainId'});log('RESULT: '+r)}catch(e){log('ERROR: '+e.message)}};
+document.getElementById('btn-continue').onclick=()=>r('CONTINUE');document.getElementById('btn-cancel').onclick=()=>r('CANCEL');
+log('Test dApp ready.');
+</script></body></html>

@@ -1,0 +1,241 @@
+/* TxGuard warning overlay styles.
+   Fixed full-screen, semi-transparent backdrop, centered modal.
+   Z-index 99999 to sit above page content. Blocks pointer events. */
+
+.txguard-overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.txguard-overlay-modal {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 0;
+}
+
+.txguard-overlay-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.txguard-overlay-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.txguard-risk-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.txguard-risk-badge.high {
+  background: #fee;
+  color: #c00;
+  border: 1px solid #fcc;
+}
+
+.txguard-risk-badge.medium {
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.txguard-risk-badge.low {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.txguard-risk-badge.unknown {
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.txguard-overlay-body {
+  padding: 16px 24px;
+}
+
+.txguard-summary {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.txguard-section {
+  margin-bottom: 16px;
+}
+
+.txguard-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.txguard-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.txguard-detail-label {
+  color: #666;
+}
+
+.txguard-detail-value {
+  color: #1a1a1a;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.txguard-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.txguard-finding {
+  border-left: 3px solid #ccc;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 0 4px 4px 0;
+}
+
+.txguard-finding.high {
+  border-left-color: #c00;
+}
+
+.txguard-finding.medium {
+  border-left-color: #e65100;
+}
+
+.txguard-finding.low {
+  border-left-color: #2e7d32;
+}
+
+.txguard-finding-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.txguard-finding-desc {
+  font-size: 13px;
+  color: #555;
+  margin: 0 0 4px 0;
+}
+
+.txguard-finding-rec {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+  font-style: italic;
+}
+
+.txguard-tech-details {
+  margin-top: 8px;
+}
+
+.txguard-tech-toggle {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.txguard-tech-content {
+  background: #f5f5f5;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #444;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.txguard-overlay-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.txguard-btn {
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  min-height: 44px;
+  transition: background 0.15s;
+}
+
+.txguard-btn-continue {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+.txguard-btn-continue:hover {
+  background: #0052a3;
+}
+
+.txguard-btn-cancel {
+  background: #fff;
+  color: #c00;
+  border-color: #fcc;
+}
+
+.txguard-btn-cancel:hover {
+  background: #fff5f5;
+}
+
+.txguard-unlimited-warning {
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #c00;
+  margin-bottom: 12px;
+  font-weight: 600;
+}

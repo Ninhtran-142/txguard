@@ -44,6 +44,7 @@ coverage/
 
 # AI agent files
 .claude/
+.playwright-mcp
 
 # Plans folder
 plans/
@@ -56,3 +57,7 @@ plans/
 .cache/
 tmp/
 temp/
+
+# Generated injected script (built by scripts/build-injected.mjs)
+public/injected/
+.injected-tmp/
