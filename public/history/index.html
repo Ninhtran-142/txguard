@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TxGuard History</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; color: #1a1a1a; }
+    h1 { font-size: 22px; margin: 0 0 16px 0; }
+    .actions { margin-bottom: 16px; }
+    .actions button { padding: 8px 16px; font-size: 14px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: white; }
+    .actions button:hover { background: #f5f5f5; }
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .entry { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 16px; }
+    .entry-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .risk { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
+    .risk.high { background: #fee; color: #c00; }
+    .risk.medium { background: #fff3e0; color: #e65100; }
+    .risk.low { background: #e8f5e9; color: #2e7d32; }
+    .risk.unknown { background: #f5f5f5; color: #666; }
+    .time { font-size: 12px; color: #999; }
+    .summary { font-size: 14px; color: #333; }
+    .domain { font-size: 12px; color: #888; }
+    .empty { text-align: center; padding: 40px; color: #999; }
+  </style>
+</head>
+<body>
+  <h1>TxGuard History</h1>
+  <div class="actions">
+    <button id="clear-btn">Clear History</button>
+  </div>
+  <div id="content"><p style="color:#999">Loading...</p></div>
+  <script>
+    // Self-contained history page. Queries the background for tx history via
+    // chrome.runtime.sendMessage and renders the list with plain DOM (no React
+    // build step needed, so CRXJS copies this verbatim into dist).
+    var GET_POPUP_STATE = 'GET_POPUP_STATE';
+    var CLEAR_HISTORY = 'CLEAR_HISTORY';
+
+    function fmtTime(ts) { return new Date(ts).toLocaleString(); }
+
+    function riskClass(level) {
+      return ({ HIGH: 'high', MEDIUM: 'medium', LOW: 'low', UNKNOWN: 'unknown' })[level] || 'unknown';
+    }
+
+    function render(history) {
+      var el = document.getElementById('content');
+      if (!history || history.length === 0) {
+        el.innerHTML = '<div class="empty">No transaction checks recorded yet.</div>';
+        return;
+      }
+      var html = '<div class="list">';
+      history.forEach(function (item) {
+        html += '<div class="entry">';
+        html += '<div class="entry-header">';
+        html += '<span class="risk ' + riskClass(item.riskLevel) + '">' + item.riskLevel + '</span>';
+        html += '<span class="time">' + fmtTime(item.timestamp) + '</span>';
+        html += '</div>';
+        html += '<div class="summary"></div>';  // placeholder, filled below to avoid XSS
+        html += '<div class="domain"></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+      // Fill text content safely (textContent prevents HTML injection).
+      var entries = el.querySelectorAll('.entry');
+      history.forEach(function (item, i) {
+        entries[i].querySelector('.summary').textContent = item.summary || '';
+        entries[i].querySelector('.domain').textContent = item.domain || '';
+      });
+    }
+
+    function loadHistory() {
+      if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty">Extension context unavailable. Open this page from the TxGuard popup.</div>';
+        return;
+      }
+      chrome.runtime.sendMessage({ type: GET_POPUP_STATE }, function (response) {
+        var history = (response && response.state && response.state.history) || [];
+        render(history);
+      });
+    }
+
+    document.getElementById('clear-btn').addEventListener('click', function () {
+      if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) return;
+      chrome.runtime.sendMessage({ type: CLEAR_HISTORY }, function () { loadHistory(); });
+    });
+
+    loadHistory();
+  </script>
+</body>
+</html>

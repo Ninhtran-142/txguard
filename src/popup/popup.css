@@ -1,0 +1,142 @@
+.popup {
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  padding: 16px;
+  width: 360px;
+  min-height: 400px;
+  color: #1a1a1a;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.popup h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.status-indicator {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.status-indicator.active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-indicator.inactive {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.popup-section {
+  margin-bottom: 14px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.section-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.rpc-status {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.rpc-status.ok {
+  color: #2e7d32;
+}
+
+.rpc-status.warn {
+  color: #e65100;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.risk-dot {
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.history-summary {
+  color: #444;
+}
+
+.empty {
+  font-size: 13px;
+  color: #999;
+  padding: 8px 0;
+}
+
+.popup-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.popup-actions button {
+  flex: 1;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+}
+
+.popup-actions button:hover {
+  background: #f5f5f5;
+}
+
+.domain-risk {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 4px;
+  display: inline-block;
+  font-weight: 600;
+}
+.domain-risk.known {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.domain-risk.unknown {
+  background: #f5f5f5;
+  color: #666;
+}
+.domain-risk.blocked {
+  background: #fee;
+  color: #c00;
+}
