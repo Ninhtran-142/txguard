@@ -12,7 +12,24 @@ export const MESSAGE_SOURCES = {
   TXGUARD_BACKGROUND: 'TXGUARD_BACKGROUND',
   TXGUARD_POPUP: 'TXGUARD_POPUP',
   TXGUARD_SETTINGS: 'TXGUARD_SETTINGS',
+  TXGUARD_HISTORY: 'TXGUARD_HISTORY',
 } as const;
+
+/**
+ * Sources the background service worker accepts messages from.
+ *
+ * The injected script (TXGUARD_INJECTED) runs in the page main world and
+ * CANNOT call chrome.runtime — it talks to the content script via
+ * window.postMessage, which then forwards to the background as
+ * TXGUARD_CONTENT. The background therefore only ever receives messages from
+ * extension-owned pages (popup, settings, history) and content scripts.
+ */
+export const VALID_BACKGROUND_SOURCES = new Set<string>([
+  MESSAGE_SOURCES.TXGUARD_CONTENT,
+  MESSAGE_SOURCES.TXGUARD_POPUP,
+  MESSAGE_SOURCES.TXGUARD_SETTINGS,
+  MESSAGE_SOURCES.TXGUARD_HISTORY,
+]);
 
 /** Message types exchanged across the bridge. */
 export const MESSAGE_TYPES = {

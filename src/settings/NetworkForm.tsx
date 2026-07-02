@@ -16,7 +16,13 @@ const networkSchema = z.object({
 type NetworkFormData = z.infer<typeof networkSchema>;
 
 interface NetworkFormProps {
+  /** Existing chain being edited (title shows "Edit Network"). */
   initial?: ChainConfig;
+  /**
+   * Pre-fill values for a NEW (unsaved) chain, e.g. from a suggested network.
+   * The form stays in "Add Network" mode; the user reviews and saves.
+   */
+  preset?: ChainConfig;
   onSave: (chain: ChainConfig) => void;
   onCancel: () => void;
   onTestRpc: (chain: ChainConfig) => Promise<RpcTestResult>;
@@ -34,17 +40,20 @@ function isValidUrl(value: string): boolean {
 
 export function NetworkForm({
   initial,
+  preset,
   onSave,
   onCancel,
   onTestRpc,
 }: NetworkFormProps) {
+  // `initial` (a real edit) wins over `preset` (a new-chain pre-fill).
+  const initValues = initial ?? preset;
   const [form, setForm] = useState<NetworkFormData>({
-    name: initial?.name ?? '',
-    chainId: initial?.chainId ?? 0,
-    rpcUrl: initial?.rpcUrl ?? '',
-    explorerUrl: initial?.explorerUrl ?? '',
-    nativeCurrencySymbol: initial?.nativeCurrencySymbol ?? '',
-    nativeCurrencyDecimals: initial?.nativeCurrencyDecimals ?? 18,
+    name: initValues?.name ?? '',
+    chainId: initValues?.chainId ?? 0,
+    rpcUrl: initValues?.rpcUrl ?? '',
+    explorerUrl: initValues?.explorerUrl ?? '',
+    nativeCurrencySymbol: initValues?.nativeCurrencySymbol ?? '',
+    nativeCurrencyDecimals: initValues?.nativeCurrencyDecimals ?? 18,
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof NetworkFormData, string>>

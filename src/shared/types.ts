@@ -124,6 +124,15 @@ export interface RiskFinding {
   severity: RiskLevel;
 }
 
+/**
+ * How an intercepted request was resolved. Stored on the history item so the
+ * user can see not just the risk result but also the outcome.
+ * - `CONTINUE` / `CANCEL`: the user's explicit choice in the overlay.
+ * - `CANCELLED_BY_POLICY`: auto-cancelled because `blockHighRiskByDefault`
+ *   was on and the risk level was HIGH (no overlay shown).
+ */
+export type TxDecision = 'CONTINUE' | 'CANCEL' | 'CANCELLED_BY_POLICY';
+
 /** Full analysis result stored in history and shown in the overlay. */
 export interface TxAnalysisResult {
   requestId: string;
@@ -135,6 +144,8 @@ export interface TxAnalysisResult {
   timestamp: number;
   domain: string;
   chainId?: number;
+  /** Outcome of the request (set for policy cancels; optional otherwise). */
+  decision?: TxDecision;
 }
 
 /** User decision for an intercepted request. */
@@ -142,6 +153,17 @@ export interface TxUserDecision {
   requestId: string;
   decision: 'CONTINUE' | 'CANCEL';
 }
+
+/**
+ * Policy returned by the background alongside an analysis. Drives the content
+ * script's behaviour without changing the injected hook contract:
+ * - `ASK_USER`: show the warning overlay and wait for the user's decision.
+ * - `CONTINUE`: bypass the overlay and forward the original request unchanged
+ *   (used when TxGuard is disabled via `settings.enabled`).
+ * - `CANCEL`: bypass the overlay and reject with EIP-1193 code 4001 (used when
+ *   `blockHighRiskByDefault` cancels a HIGH-risk request by policy).
+ */
+export type Policy = 'ASK_USER' | 'CONTINUE' | 'CANCEL';
 
 /** TxGuard user settings (persisted in chrome.storage.local). */
 export interface TxGuardSettings {

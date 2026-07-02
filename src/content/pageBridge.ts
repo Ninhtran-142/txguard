@@ -4,10 +4,14 @@
 // Security note: validate message sources on both sides. Only accept
 // PROVIDER_REQUEST_INTERCEPTED from TXGUARD_INJECTED and USER_DECISION from
 // TXGUARD_CONTENT. Never trust page-provided data without validating.
+//
+// All messages sent to the background carry source = TXGUARD_CONTENT so the
+// background router can reject unknown/foreign sources.
 
 import { MESSAGE_SOURCES, MESSAGE_TYPES } from '../shared/messages';
 import type {
   InterceptedProviderRequest,
+  Policy,
   TxAnalysisResult,
   TxUserDecision,
 } from '../shared/types';
@@ -21,6 +25,12 @@ interface BridgeMessage {
   requestId?: string;
   chainId?: number;
   [key: string]: unknown;
+}
+
+/** Background response for an intercepted request. */
+export interface AnalysisResponse {
+  analysis?: TxAnalysisResult;
+  policy: Policy;
 }
 
 // Inject the provider hook script into the page main world.
@@ -40,19 +50,20 @@ export function injectProviderHook(): void {
 }
 
 // Forward an intercepted provider request to the background for analysis.
-// Returns the analysis result from the background.
+// Returns the analysis result + policy from the background.
 export async function forwardToBackground(
   request: InterceptedProviderRequest,
-): Promise<TxAnalysisResult | undefined> {
+): Promise<AnalysisResponse | undefined> {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
       {
+        source: CONTENT_SOURCE,
         type: MESSAGE_TYPES.PROVIDER_REQUEST_INTERCEPTED,
         ...request,
       },
       (response: unknown) => {
-        const r = response as { analysis?: TxAnalysisResult } | undefined;
-        resolve(r?.analysis);
+        const r = response as AnalysisResponse | undefined;
+        resolve(r);
       },
     );
   });
@@ -63,6 +74,7 @@ export function forwardChainChangedToBackground(
   chainId: number | undefined,
 ): void {
   chrome.runtime.sendMessage({
+    source: CONTENT_SOURCE,
     type: MESSAGE_TYPES.WALLET_CHAIN_CHANGED,
     chainId,
   });
@@ -84,6 +96,7 @@ export function sendDecisionToInjected(decision: TxUserDecision): void {
 // Forward the user's decision to the background (for history recording).
 export function forwardDecisionToBackground(decision: TxUserDecision): void {
   chrome.runtime.sendMessage({
+    source: CONTENT_SOURCE,
     type: MESSAGE_TYPES.USER_DECISION,
     ...decision,
   });

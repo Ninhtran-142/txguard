@@ -118,6 +118,15 @@ npm run format
 4. Click **Test RPC** to verify the endpoint and chain ID match.
 5. Click **Save Network**.
 
+### Protection Settings
+
+Open TxGuard Settings and scroll to **Protection Settings** to configure:
+
+- **Enable TxGuard** — master switch. When off, TxGuard does not analyze, does not show the overlay, does not store history, and forwards the original wallet request unchanged.
+- **Warn on unknown contract calls** — surface a warning when TxGuard cannot decode a transaction.
+- **Warn on personal_sign requests** — surface a warning for personal signature requests from unknown sites.
+- **Block high-risk requests by default** — when on, HIGH-risk requests are cancelled by policy (EIP-1193 code 4001) without showing the overlay. The history entry is recorded as `CANCELLED_BY_POLICY`.
+
 ## Privacy Notice
 
 TxGuard is **local-first**. Your transaction data, wallet address, and activity are never sent to a remote server.
@@ -135,57 +144,6 @@ TxGuard is **local-first**. Your transaction data, wallet address, and activity 
 3. RPC trust: a custom RPC can return incorrect data.
 4. No full transaction simulation in MVP.
 5. No global scam database in MVP.
-6. No backend in MVP.
-7. Typed data detection is best-effort only.
-
-## Roadmap
-
-### v0.1
-
-- EVM-only custom RPC support.
-- Provider request interception.
-- ERC20 approval detection.
-- Unlimited approval warnings.
-- NFT approval-for-all warnings.
-- Signature warnings.
-- Local history.
-
-### v0.2
-
-- Approval dashboard.
-- Revoke helper.
-- Permit and Permit2 support.
-- Better typed data parsing.
-- Contract code and bytecode checks.
-
-### v0.3
-
-- Domain reputation database.
-- Known dApp allowlist.
-- Known scam blocklist.
-- Import/export settings.
-
-### v0.4
-
-- Transaction simulation.
-- Balance delta preview.
-- Token price display.
-- Slippage warning.
-
-### v0.5
-
-- Team mode.
-- Shared policy rules.
-- Slack/Telegram alerts.
-- B2B dashboard.
-
-### Later
-
-- TRON support.
-- Bridge risk.
-- Cross-chain fee comparison.
-- Solana support.
-MVP.
 6. No backend in MVP.
 7. Typed data detection is best-effort only.
 

@@ -1,4 +1,4 @@
-import { MESSAGE_TYPES } from '../shared/messages';
+import { MESSAGE_TYPES, VALID_BACKGROUND_SOURCES } from '../shared/messages';
 import { validateRpc, getCode } from '../core/rpc/client';
 import { decodeTransaction } from '../core/decoder/decoder';
 import { decodeSignature } from '../core/decoder/signatureDecoder';
@@ -20,6 +20,7 @@ import type {
   ChainConfig,
   DomainRisk,
   InterceptedProviderRequest,
+  Policy,
   TransactionRequestLike,
   TxAnalysisResult,
   TxUserDecision,
@@ -28,14 +29,26 @@ import type {
 
 // Background message router.
 //
-// Handles messages from content scripts, popup, and settings page.
+// Handles messages from content scripts, popup, settings, and history pages.
 // Security note: validate message sources and request shapes before
 // processing. This router must NEVER handle private keys or sign
 // transactions — it only routes messages and triggers read-only RPC calls.
+//
+// Source validation: only messages from extension-owned contexts (content
+// script, popup, settings, history) are accepted. The injected page-world
+// script cannot reach the background directly — it talks to the content
+// script via window.postMessage, which forwards as TXGUARD_CONTENT.
 export async function handleBackgroundMessage(message: {
   type: string;
+  source?: string;
   [key: string]: unknown;
 }): Promise<unknown> {
+  // Reject messages that do not carry a recognised source. This prevents
+  // page scripts or other extensions from driving the background router.
+  if (!message.source || !VALID_BACKGROUND_SOURCES.has(message.source)) {
+    return undefined;
+  }
+
   switch (message.type) {
     case MESSAGE_TYPES.RPC_TEST_REQUEST: {
       const config = message.config as ChainConfig;
@@ -44,21 +57,20 @@ export async function handleBackgroundMessage(message: {
     }
 
     case MESSAGE_TYPES.PROVIDER_REQUEST_INTERCEPTED: {
-      // Analyse an intercepted provider request and return the result.
+      // Analyse an intercepted provider request and return the result + a
+      // policy that tells the content script how to proceed.
       const request = message as unknown as InterceptedProviderRequest & {
         origin?: string;
       };
-      const analysis = await analyzeProviderRequest(request);
-      return { type: MESSAGE_TYPES.ANALYSIS_RESULT, analysis };
+      const { analysis, policy } = await analyzeProviderRequest(request);
+      return { type: MESSAGE_TYPES.ANALYSIS_RESULT, analysis, policy };
     }
 
     case MESSAGE_TYPES.USER_DECISION: {
-      // Record the user's decision in history (the actual continue/cancel
-      // is handled by the injected script via the content bridge).
+      // The actual continue/cancel is applied by the injected script via the
+      // content bridge. Here we simply acknowledge; history for the
+      // intercepted request was already stored during analysis.
       const decision = message as unknown as TxUserDecision;
-      // History recording happens during analysis; here we could update
-      // the history item with the decision. For MVP, the analysis is
-      // stored when the request is intercepted.
       return { type: 'ACK', decision };
     }
 
@@ -140,17 +152,37 @@ function parseSwitchChainId(value: unknown): number | undefined {
   return undefined;
 }
 
+/** Result of analysing an intercepted request: the analysis plus a policy. */
+interface AnalysisOutcome {
+  analysis?: TxAnalysisResult;
+  policy: Policy;
+}
+
 // Analyse an intercepted provider request: decode -> enrich via RPC -> evaluate
-// risk -> store. Security note: never stores full signature payloads.
+// risk -> store. Applies the master `enabled` switch and the
+// `blockHighRiskByDefault` policy. Security notes:
+// - Never stores full signature payloads.
+// - Never modifies transaction params. The original request is forwarded
+//   unchanged by the injected hook on CONTINUE; here we only produce an
+//   analysis + policy.
 async function analyzeProviderRequest(
   request: InterceptedProviderRequest & { origin?: string },
-): Promise<TxAnalysisResult> {
+): Promise<AnalysisOutcome> {
   const settings = await getSettings();
+
+  // Master switch: when TxGuard is disabled, do NOT analyse, do NOT show the
+  // overlay, do NOT store history. The content script will forward the
+  // original provider request unchanged (policy CONTINUE).
+  if (!settings.enabled) {
+    return { analysis: undefined, policy: 'CONTINUE' };
+  }
+
   const chains = await getChains();
   const allowlist = await getDomainAllowlist();
 
   // Try to get the chain config for the current chain (from the wallet-reported
-  // chainId carried in the intercepted request, or cached wallet chainId).
+  // chainId carried in the intercepted request). Only USER-configured chains
+  // are used for RPC enrichment — default chain templates never provide an RPC.
   const walletChainId = request.chainId;
   const chainConfig = walletChainId
     ? chains.find((c) => c.chainId === walletChainId)
@@ -191,7 +223,7 @@ async function analyzeProviderRequest(
     decoded = { isDecoded: false, actionType: 'UNKNOWN' as const };
   }
 
-  // ── RPC enrichment (only when a chain config with RPC is available) ──
+  // ── RPC enrichment (only when a USER-configured chain with RPC is available) ──
   // Best-effort: failures must never break analysis. We catch all errors and
   // continue with partial data so the user still gets a warning overlay.
   let hasCode: boolean | undefined;
@@ -274,9 +306,18 @@ async function analyzeProviderRequest(
     chainId: walletChainId,
   };
 
-  // Store in local history (capped at 100, never stores full signature payloads).
-  // Security note: we only store the summary + risk result, not raw params.
-  await addTxHistoryItem(analysis);
+  // Policy: if blockHighRiskByDefault is on and the request is HIGH risk,
+  // cancel by policy (no overlay). Record the outcome on the history item so
+  // users can see it was auto-cancelled, not a manual choice. The injected
+  // hook still rejects with EIP-1193 code 4001 — we never mutate tx params.
+  if (settings.blockHighRiskByDefault && analysis.riskLevel === 'HIGH') {
+    analysis.decision = 'CANCELLED_BY_POLICY';
+    await addTxHistoryItem(analysis);
+    return { analysis, policy: 'CANCEL' };
+  }
 
-  return analysis;
+  // Default: ask the user via the overlay. Store in local history (capped at
+  // 100, never stores full signature payloads — only summary + risk result).
+  await addTxHistoryItem(analysis);
+  return { analysis, policy: 'ASK_USER' };
 }

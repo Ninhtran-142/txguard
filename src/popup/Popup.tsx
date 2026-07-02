@@ -4,7 +4,8 @@ import type {
   DomainRisk,
   TxAnalysisResult,
 } from '../shared/types';
-import { MESSAGE_TYPES } from '../shared/messages';
+import { MESSAGE_TYPES, MESSAGE_SOURCES } from '../shared/messages';
+import { getChainTemplate } from '../core/chains/defaultChains';
 
 interface PopupState {
   domain: string;
@@ -46,7 +47,7 @@ export function Popup() {
       return;
     }
     chrome.runtime.sendMessage(
-      { type: MESSAGE_TYPES.GET_POPUP_STATE },
+      { source: MESSAGE_SOURCES.TXGUARD_POPUP, type: MESSAGE_TYPES.GET_POPUP_STATE },
       (response: unknown) => {
         const r = response as { state?: PopupState } | undefined;
         if (r?.state) setState(r.state);
@@ -71,10 +72,19 @@ export function Popup() {
     );
   }
 
-  const chain = state?.walletChainId
+  // A user-configured chain (with RPC) takes precedence. Otherwise, if the
+  // wallet's chain ID matches a known template, show the recognised chain name
+  // but flag RPC as "Not configured" — the user must add an RPC in Settings.
+  // Default chain templates never provide an RPC, so no public RPC is used
+  // silently.
+  const userChain = state?.walletChainId
     ? state.chains.find((c) => c.chainId === state.walletChainId)
     : undefined;
-  const rpcStatus = chain
+  const template = state?.walletChainId
+    ? getChainTemplate(state.walletChainId)
+    : undefined;
+  const chainName = userChain?.name ?? template?.name;
+  const rpcStatus = userChain
     ? 'Configured'
     : state?.walletChainId
       ? 'Not configured'
@@ -105,7 +115,7 @@ export function Popup() {
         <div className="section-label">Current Chain</div>
         <div className="section-value">
           {state?.walletChainId
-            ? `Chain ID: ${state.walletChainId}${chain ? ` (${chain.name})` : ''}`
+            ? `Chain ID: ${state.walletChainId}${chainName ? ` (${chainName})` : ''}`
             : 'Not detected'}
         </div>
         <div
@@ -113,6 +123,11 @@ export function Popup() {
         >
           RPC: {rpcStatus}
         </div>
+        {!userChain && state?.walletChainId && (
+          <button className="add-rpc-btn" onClick={() => chrome.runtime.openOptionsPage()}>
+            Add RPC for this chain
+          </button>
+        )}
       </div>
 
       <div className="popup-section">
